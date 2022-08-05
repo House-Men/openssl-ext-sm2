@@ -33,7 +33,7 @@ void outPrintf(unsigned char *c1, char *name) {
     php_printf("\r\n");
     php_printf("%s:\r\n  ", name);
     int i;
-    for (i = 0; i < strlen((char *)c1); i++) {
+    for (i = 0; i < strlen((char *) c1); i++) {
         php_printf("%02x", c1[i]);
         if (((i + 1) % 4) == 0) php_printf(" ");
     }
@@ -72,7 +72,7 @@ PHP_FUNCTION (sm2_key_pair) {
     RETVAL_FALSE;
     int pubKey_len, privekey_len;
 
-    if((error=sm2_create_key_pair(&key_pair))){
+    if ((error = sm2_create_key_pair(&key_pair))) {
         goto clean_up;
     }
 
@@ -94,11 +94,11 @@ PHP_FUNCTION (sm2_key_pair) {
     ZVAL_NEW_STR(pri_key, pri_key_buff);
     pub_key_buff = NULL;
     pri_key_buff = NULL;
-    error=0;
+    error = 0;
     clean_up:
 
     RETVAL_LONG(error);
- }
+}
 /* }}}*/
 
 PHP_FUNCTION (sm2_sign) {
@@ -119,20 +119,20 @@ PHP_FUNCTION (sm2_sign) {
         return;
     }
     RETVAL_FALSE;
-    if(pri_key_len!=32){
-        error=PHP_SM2_PRI_KEY_LEN;
+    if (pri_key_len != 32) {
+        error = PHP_SM2_PRI_KEY_LEN;
         goto clean_up;
     }
     memcpy(key_pair.pri_key, pri_key, pri_key_len);
     generate_pubic_key(&key_pair);
 
-    if((error=sm2_sign_data(msg,
-                  (int) msg_len,
-                  iv,
-                  (int) iv_len,
-                  key_pair.pub_key,
-                  key_pair.pri_key,
-                  &sm2_sig))){
+    if ((error = sm2_sign_data(msg,
+                               (int) msg_len,
+                               iv,
+                               (int) iv_len,
+                               key_pair.pub_key,
+                               key_pair.pri_key,
+                               &sm2_sig))) {
         goto clean_up;
     }
 
@@ -153,7 +153,7 @@ PHP_FUNCTION (sm2_sign) {
     ZVAL_NEW_STR(signature, signature_buff);
 
     signature_buff = NULL;
-    error=0;
+    error = 0;
     clean_up:
     RETVAL_LONG(error);
 }
@@ -173,11 +173,11 @@ PHP_FUNCTION (sm2_sign_verify) {
     memcpy(sm2_sig.s_coordinate, (signature + sizeof(sm2_sig.r_coordinate)), sizeof(sm2_sig.s_coordinate));
 
     error = sm2_verify_sig(msg,
-                            msg_len,
-                            iv,
-                            iv_len,
-                            pub_key,
-                            &sm2_sig);
+                           msg_len,
+                           iv,
+                           iv_len,
+                           pub_key,
+                           &sm2_sig);
 
     RETVAL_LONG(error);
 }
@@ -188,78 +188,109 @@ PHP_FUNCTION (sm2_encrypt) {
     zend_string *encrypt_buff = NULL;
     unsigned char *msg, *pub_key, c1[65], c3[32];
     size_t msg_len, pub_key_len;
-    unsigned char *c2, *plaintext;
-    int plaintext_len,error;
+    unsigned char *c2, *plaintext = NULL;
+    int plaintext_len, error,i,c1_len,c2_len,c3_len;
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "sz/s", &msg, &msg_len, &encrypt, &pub_key,
                               &pub_key_len) == FAILURE) {
         return;
     }
-    RETVAL_FALSE;
-
+//
     if (!(c2 = (unsigned char *) malloc(msg_len))) {
-        error=0x100f;
+        error = 0x203;
         goto clean_up;
     }
+   ;
+
     SM2_KEY_PAIR key_pair;
-
     memcpy(key_pair.pub_key, pub_key, sizeof(key_pair.pub_key));
-    php_sm2_encrypt(msg, (int) msg_len, key_pair.pub_key, c1, c3, c2);
-
-    //动态分配的字节数
-    if (!(plaintext = (unsigned char *) malloc((strlen((char *)c2)+sizeof(c1)+sizeof(c3))))) {
-        error=0x100f;
+    if ((error = php_sm2_encrypt(msg, (int) msg_len, key_pair.pub_key, c1, c3, c2))) {
         goto clean_up;
     }
-    memcpy(plaintext, c1, sizeof(c1));
-    memcpy((plaintext+sizeof(c1)), c3, sizeof(c3));
-    memcpy((plaintext+sizeof(c1)+sizeof(c3)), c2, msg_len);
+    c1_len=sizeof(c1);
+    c2_len=(int)msg_len;
+    c3_len=sizeof(c3);
+    plaintext_len=c1_len+c3_len+c2_len;
+    //动态分配的字节数
+    if (!(plaintext = (unsigned char *) malloc(plaintext_len))) {
+        error = 0x204;
+        goto clean_up;
+    }
 
-    plaintext_len= (int)strlen((char *)plaintext);
-
-    //结果转化
+    for (i=0;i<c1_len;i++){
+        plaintext[i]=c1[i];
+    }
+    for (i=0;i<c3_len;i++){
+        plaintext[i+c1_len]=c3[i];
+    }
+    for (i=0;i<c2_len;i++){
+        plaintext[i+c1_len+c3_len]=c2[i];
+    }
+//    //结果转化
     encrypt_buff = zend_string_alloc(plaintext_len, 0);
     memcpy(ZSTR_VAL(encrypt_buff), plaintext, plaintext_len);
 
     zval_ptr_dtor(encrypt);
     ZSTR_VAL(encrypt_buff)[plaintext_len] = '\0';
     ZVAL_NEW_STR(encrypt, encrypt_buff);
-
-    encrypt_buff=NULL;
-    error=0;
+    error = 0;
     clean_up:
+    if (plaintext) {
+        free(plaintext);
+    }
+    if (c2) {
+        free(c2);
+    }
+    encrypt_buff = NULL;
     RETVAL_LONG(error);
- }
+}
 
 
-PHP_FUNCTION(sm2_decrypt){
+PHP_FUNCTION (sm2_decrypt) {
 
     zval *msg;
     zend_string *msg_buff = NULL;
-    unsigned char *encrypt, *pri_key,*c2, *plaintext, c1[65], c3[32];
-    size_t encrypt_len,pri_key_len;
-    int msg_len;
+    unsigned char *encrypt, *pri_key, *c2, *plaintext, c1[65], c3[32];
+    size_t encrypt_len, pri_key_len;
+    int msg_len,c1_len,c2_len,c3_len,error;
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "sz/s", &encrypt, &encrypt_len, &msg, &pri_key,
                               &pri_key_len) == FAILURE) {
         return;
     }
     RETVAL_FALSE;
+    c1_len=65;
+    c3_len=32;
+    c2_len= (int) encrypt_len - c1_len - 32;
+    if(!(c2 = (unsigned char *) malloc(c2_len))){
+        error=0x301;
+        goto  clean_up;
+    }
 
-    msg_len=(int)encrypt_len-65-32;
-    c2=(unsigned char *) malloc(msg_len);
-    plaintext = (unsigned char *) malloc(msg_len);
-    memcpy(c1,encrypt,65);
-    memcpy(c3,(encrypt+65),32);
-    memcpy(c2,(encrypt+65+32),msg_len);
-    php_sm2_decrypt(c1,c3,c2,msg_len,pri_key,plaintext);
-
-    msg_buff = zend_string_alloc(msg_len, 0);
-    memcpy(ZSTR_VAL(msg_buff), plaintext, msg_len);
-
+    if(!( plaintext = (unsigned char *) malloc(c2_len))){
+        error=0x302;
+        goto  clean_up;
+    }
+    memcpy(c1, encrypt, 65);
+    memcpy(c3, (encrypt + 65), 32);
+    memcpy(c2, (encrypt + 65 + 32), c2_len);
+    if((error=php_sm2_decrypt(c1, c3, c2, c2_len, pri_key, plaintext))){
+        goto  clean_up;
+    }
+    msg_buff = zend_string_alloc(c2_len, 0);
+    memcpy(ZSTR_VAL(msg_buff), plaintext, c2_len);
     zval_ptr_dtor(msg);
-    ZSTR_VAL(msg_buff)[msg_len] = '\0';
+    ZSTR_VAL(msg_buff)[c2_len] = '\0';
     ZVAL_NEW_STR(msg, msg_buff);
-    msg_buff=NULL;
-    RETVAL_TRUE;
+    error=0;
+
+    clean_up:
+    if (plaintext) {
+        free(plaintext);
+    }
+    if (c2) {
+        free(c2);
+    }
+    msg_buff = NULL;
+    RETVAL_LONG(error);
 }
 
 /* {{{ PHP_RINIT_FUNCTION

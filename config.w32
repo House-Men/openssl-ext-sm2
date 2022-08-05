@@ -1,0 +1,7 @@
+ARG_ENABLE('sm2', 'sm2 support', 'no');
+
+if (PHP_SM2 != 'no') {
+	AC_DEFINE('HAVE_SM2', 1, 'sm2 support enabled');
+
+	EXTENSION('sm2', 'sm2.c openssl_sm2/sm2_create_key_pair.c openssl_sm2/sm2_encrypt_and_decrypt.c openssl_sm2/sm2_sign_and_verify.c openssl_sm2/sm3_with_preprocess.c', null, '/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1');
+}

@@ -7,7 +7,7 @@
 zend 常规PHP扩展结构
 
 #### 安装教程
-解压进入openss-ext-sm2目录
+解压进入openssl-ext-sm2目录
 
 1.  phpize
 2.  ./configure  --with-openssl=/usr/local/openssl 你的openssl lib里必须包含 动态库否则程序异常

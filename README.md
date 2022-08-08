@@ -50,7 +50,7 @@ sm2_sign_verify($msg, $signature, $pub_key, $iv)；
 
 返回值int 0 成功 其他状态失败
 ```
-4，公钥加密
+4. 公钥加密
 ```
 $msg 信息
 $encrypt 输出加密结果 二进制 
@@ -59,7 +59,7 @@ sm2_encrypt($msg, $encrypt, $pub_key)
 
 返回值int 0 成功 其他状态失败
 ```
-5，私钥解密
+5. 私钥解密
 ```
 $encrypt 加密信息 二进制
 $string 输出结果 明文
@@ -67,6 +67,33 @@ $pri_key 私钥
 sm2_decrypt($encrypt, $string, $pri_key)
 
 返回值int 0 成功 其他状态失败
+```
+6. 演示
+```
+
+ $msg = '这是测试';
+ $iv = '1234567812345678';
+
+ sm2_key_pair($pub_key, $pri_key);
+
+ #公钥:BHSAPGXtrHNxqJ3/b0+eNu2mdO0mpDfTGNJUMoEWpNpSL53Dw+YM/B/QT5OoLm4xQtw0hZY5wlWTR+cD629Grek=
+ #私钥:++BuzKd1mPa0RXAJcY6DHDq9SUzo3T6/engbKReQRqI=
+
+ sm2_sign($msg, $signature, $pri_key, $iv);
+
+ #私钥签名:+YHNtKkXbsRSs2nk5amd/YNqsiH8Kyr+oyLVVzuvRl+lqb40uzPxjsRo9QTYw7kZdWSfvM5lbxDMfF0cugQNfQ==
+
+ sm2_sign_verify($msg, $signature, $pub_key, $iv);
+
+ #公钥验签:0
+
+ sm2_encrypt($msg, $encrypt, $pub_key);
+
+ #公钥加密:BBdm04Uh5EgzYKG3Ff8rBFJQZxRSXnrh9/WDZxS6PmzfnTDz0O0C115BPxMDfBNnOK5Ixs9kHTJPNSDoiHoiEmrnuotKN53rxnJtNd3MTbRjJOQ0sas9Kdktl1eHzj2/eseNaGh0LHZIOrBxAQ==
+ sm2_decrypt($encrypt, $string, $pri_key);
+
+ #私钥解密:这是测试
+
 ```
 #### 参与贡献
 

@@ -1,7 +1,7 @@
 # openssl-ext-sm2
 
 #### 介绍
-基于openssl密码库编写的sm2国密算法PHP扩展
+基于openssl密码库编写的sm2国密算法PHP扩展，兼容版本php7
 
 #### 软件架构
 zend 常规PHP扩展结构

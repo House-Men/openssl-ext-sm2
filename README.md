@@ -14,7 +14,7 @@ zend 常规PHP扩展结构
 
 1，liunx :openssl/lib必须包含 libcrypto.so和libssl.so 动态库
 
-2，mac :openssl/lib必须包含 libcrypto.so和libssl.so 动态库
+2，mac :openssl/lib必须包含 libcrypto.dylib和libssl.dylib 动态库
 
 例：liunx
 ![liunx-openssl位置](doc/image/liunx-openssl.png)
@@ -34,7 +34,7 @@ phpize
 ```
 检查依赖
 ```asm
-./configure  --with-openssl=/usr/local/openssl
+./configure  --with-openssl=/usr/local/openssl@1.1
 ```
 检查结果
 ```asm

@@ -1,14 +1,24 @@
 # openssl-ext-sm2
 
 #### 介绍
-基于openssl密码库编写的sm2国密算法PHP扩展，兼容版本php7
+基于openssl密码库编写的SM2椭圆曲线公钥密码算法PHP扩展
+特性：非对称加密
 
 #### 软件架构
 zend 常规PHP扩展结构
 
-#### 安装教程
-解压进入openssl-ext-sm2目录
+#### 依赖要求
 
+liunx :openssl/lib必须包含 libcrypto.so和libssl.so 动态库
+mac :openssl/lib必须包含 libcrypto.so和libssl.so 动态库
+
+![liunx-openssl位置](image.png)
+
+![mac-openssl位置](mac-openssl.png)
+
+#### 安装教程
+
+解压进入openssl-ext-sm2目录
 1.  phpize
 2.  ./configure  --with-openssl=/usr/local/openssl 你的openssl lib里必须包含 动态库否则程序异常
 3.  make&&make install

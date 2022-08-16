@@ -16,6 +16,10 @@ zend 常规PHP扩展结构
 
 2，mac :openssl/lib必须包含 libcrypto.dylib和libssl.dylib 动态库
 
+如出现：: undefined symbol: BN_CTX_secure_new 或其他类似的情况，就是没有动态库，openssl 不必升级以免影响正常的openssl扩展受影响，可在新目录安装openssl
+
+教程：https://blog.csdn.net/qq_39316391/article/details/126363284
+
 例：liunx
 ![liunx-openssl位置](doc/image/liunx-openssl.png)
 

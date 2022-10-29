@@ -2,6 +2,12 @@ dnl config.m4 for extension sm2
 PHP_ARG_WITH(openssl, for OpenSSL support,
 [  --with-openssl[=DIR]      Include OpenSSL support (requires OpenSSL >= 1.0.1)])
 
+PHP_ARG_WITH(kerberos, for Kerberos support,
+[  --with-kerberos[=DIR]     OPENSSL: Include Kerberos support], no, no)
+
+PHP_ARG_WITH(system-ciphers, whether to use system default cipher list instead of hardcoded value,
+[  --with-system-ciphers   OPENSSL: Use system default cipher list instead of hardcoded value], no, no)
+
 dnl Comments in this file start with the string 'dnl'.
 dnl Remove where necessary.
 
@@ -81,13 +87,21 @@ if test "$PHP_SM2" != "no"; then
   AC_DEFINE(HAVE_SM2, 1, [ Have sm2 support ])
 
   PHP_NEW_EXTENSION(sm2, sm2.c openssl_sm2/sm2_create_key_pair.c openssl_sm2/sm2_sign_and_verify.c openssl_sm2/sm3_with_preprocess.c openssl_sm2/sm2_encrypt_and_decrypt.c, $ext_shared)
-  PHP_SUBST(OPENSSL_SHARED_LIBADD)
-   AC_CHECK_FUNCS([RAND_egd])
+  PHP_SUBST(SM2_SHARED_LIBADD)
 
-    PHP_SETUP_OPENSSL(OPENSSL_SHARED_LIBADD,
+  if test "$PHP_KERBEROS" != "no"; then
+    PHP_SETUP_KERBEROS(SM2_SHARED_LIBADD)
+  fi
+
+  AC_CHECK_FUNCS([RAND_egd])
+
+    PHP_SETUP_OPENSSL(SM2_SHARED_LIBADD,
     [
       AC_DEFINE(HAVE_OPENSSL_EXT,1,[ ])
     ], [
       AC_MSG_ERROR([OpenSSL check failed. Please check config.log for more information.])
     ])
+  if test "$PHP_SYSTEM_CIPHERS" != "no"; then
+    AC_DEFINE(USE_OPENSSL_SYSTEM_CIPHERS,1,[ Use system default cipher list instead of hardcoded value ])
+  fi
 fi

@@ -227,6 +227,10 @@ sm2_decrypt($encrypt, $string, $pri_key)
 
 #### 性能测试
 纯php代码实现国密算法：https://learnku.com/articles/68557
+注意事项：此sm2扩展加密结果额外增加了04开头,如两方加解密不互通请查看此处
+```asm
+04c30f5ef97396dc63273cb4fc70a3a0695ad8041b8019d1f0e74236d4d014842a6f1c5318ce0aaa33d360252640b850cd6a59e4cf33477076d79948e90cf664227675aa024a904fecdffc2b5ade4af0a02365e0812c0359ae38ede53d72ebd5e7b95c2560bcb7
+```
 
 服务器参数
 ```

@@ -107,15 +107,15 @@ PHP_FUNCTION (sm2_sign) {
     zend_string *signature_buff = NULL;
 
     unsigned char *msg, *pri_key, *iv;
-    size_t msg_len, pri_key_len, signature_len, iv_len;
+    size_t msg_len, pri_key_len, signature_len, iv_len, mode = 0;
     iv = NULL;
     unsigned char sign[64];
     int error;
     SM2_SIGNATURE_STRUCT sm2_sig;
     SM2_KEY_PAIR key_pair;
 
-    if (zend_parse_parameters(ZEND_NUM_ARGS(), "sz/ss", &msg, &msg_len, &signature, &pri_key, &pri_key_len,
-                              &iv, &iv_len) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "sz/ss|l", &msg, &msg_len, &signature, &pri_key, &pri_key_len,
+                              &iv, &iv_len, &mode) == FAILURE) {
         return;
     }
     RETVAL_FALSE;
@@ -132,7 +132,7 @@ PHP_FUNCTION (sm2_sign) {
                                (int) iv_len,
                                key_pair.pub_key,
                                key_pair.pri_key,
-                               &sm2_sig))) {
+                               &sm2_sig,(int)mode))) {
         goto clean_up;
     }
 
@@ -161,23 +161,24 @@ PHP_FUNCTION (sm2_sign) {
 PHP_FUNCTION (sm2_sign_verify) {
 
     unsigned char *msg, *signature, *pub_key, *iv;
-    size_t msg_len, pub_key_len, signature_len, iv_len;
+    size_t msg_len, pub_key_len, signature_len, iv_len, mode = 0;
     int error;
     SM2_SIGNATURE_STRUCT sm2_sig;
-    if (zend_parse_parameters(ZEND_NUM_ARGS(), "ssss", &msg, &msg_len, &signature, &signature_len, &pub_key,
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "ssss|l", &msg, &msg_len, &signature, &signature_len, &pub_key,
                               &pub_key_len,
-                              &iv, &iv_len) == FAILURE) {
+                              &iv, &iv_len, &mode) == FAILURE) {
         return;
     }
     memcpy(sm2_sig.r_coordinate, signature, sizeof(sm2_sig.r_coordinate));
     memcpy(sm2_sig.s_coordinate, (signature + sizeof(sm2_sig.r_coordinate)), sizeof(sm2_sig.s_coordinate));
 
     error = sm2_verify_sig(msg,
-                           msg_len,
+                           (int)msg_len,
                            iv,
-                           iv_len,
+                           (int)iv_len,
                            pub_key,
-                           &sm2_sig);
+                           &sm2_sig,
+						   (int)mode);
 
     RETVAL_LONG(error);
 }
@@ -187,11 +188,11 @@ PHP_FUNCTION (sm2_encrypt) {
     zval *encrypt;
     zend_string *encrypt_buff = NULL;
     unsigned char *msg, *pub_key, c1[65], c3[32];
-    size_t msg_len, pub_key_len;
+    size_t msg_len, pub_key_len, mode = 0;
     unsigned char *c2, *plaintext = NULL;
-    int plaintext_len, error,i,c1_len,c2_len,c3_len;
-    if (zend_parse_parameters(ZEND_NUM_ARGS(), "sz/s", &msg, &msg_len, &encrypt, &pub_key,
-                              &pub_key_len) == FAILURE) {
+    int plaintext_len, error,c1_len,c2_len,c3_len;
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "sz/s|l", &msg, &msg_len, &encrypt, &pub_key,
+                              &pub_key_len, &mode) == FAILURE) {
         return;
     }
 //
@@ -203,7 +204,7 @@ PHP_FUNCTION (sm2_encrypt) {
 
     SM2_KEY_PAIR key_pair;
     memcpy(key_pair.pub_key, pub_key, sizeof(key_pair.pub_key));
-    if ((error = php_sm2_encrypt(msg, (int) msg_len, key_pair.pub_key, c1, c3, c2))) {
+    if ((error = php_sm2_encrypt(msg, (int) msg_len, key_pair.pub_key, c1, c3, c2, (int)mode))) {
         goto clean_up;
     }
     c1_len=sizeof(c1);
@@ -216,15 +217,15 @@ PHP_FUNCTION (sm2_encrypt) {
         goto clean_up;
     }
 
-    for (i=0;i<c1_len;i++){
-        plaintext[i]=c1[i];
-    }
-    for (i=0;i<c3_len;i++){
-        plaintext[i+c1_len]=c3[i];
-    }
-    for (i=0;i<c2_len;i++){
-        plaintext[i+c1_len+c3_len]=c2[i];
-    }
+	if(mode < 1) {
+		memcpy(plaintext, c1, c1_len);
+		memcpy((plaintext + c1_len), c3, c3_len);
+		memcpy((plaintext + c1_len + c3_len), c2, c2_len);
+	}else{
+		memcpy(plaintext, c1, c1_len);
+		memcpy((plaintext + c1_len), c2, c2_len);
+		memcpy((plaintext + c1_len + c2_len), c3, c3_len);
+	}
 //    //结果转化
     encrypt_buff = zend_string_alloc(plaintext_len, 0);
     memcpy(ZSTR_VAL(encrypt_buff), plaintext, plaintext_len);
@@ -250,10 +251,10 @@ PHP_FUNCTION (sm2_decrypt) {
     zval *msg;
     zend_string *msg_buff = NULL;
     unsigned char *encrypt, *pri_key, *c2, *plaintext, c1[65], c3[32];
-    size_t encrypt_len, pri_key_len;
-    int msg_len,c1_len,c2_len,c3_len,error;
-    if (zend_parse_parameters(ZEND_NUM_ARGS(), "sz/s", &encrypt, &encrypt_len, &msg, &pri_key,
-                              &pri_key_len) == FAILURE) {
+    size_t encrypt_len, pri_key_len, mode = 0;
+    int c1_len,c2_len,c3_len,error;
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "sz/s|l", &encrypt, &encrypt_len, &msg, &pri_key,
+                              &pri_key_len, &mode) == FAILURE) {
         return;
     }
     RETVAL_FALSE;
@@ -269,10 +270,16 @@ PHP_FUNCTION (sm2_decrypt) {
         error=0x302;
         goto  clean_up;
     }
-    memcpy(c1, encrypt, 65);
-    memcpy(c3, (encrypt + 65), 32);
-    memcpy(c2, (encrypt + 65 + 32), c2_len);
-    if((error=php_sm2_decrypt(c1, c3, c2, c2_len, pri_key, plaintext))){
+	if(mode < 1) {
+		memcpy(c1, encrypt, 65);
+		memcpy(c3, (encrypt + 65), 32);
+		memcpy(c2, (encrypt + 65 + 32), c2_len);
+	}else {
+		memcpy(c1, encrypt, 65);
+		memcpy(c2, (encrypt + 65), c2_len);
+		memcpy(c3, (encrypt + 65 + c2_len), 32);
+	}
+    if((error=php_sm2_decrypt(c1, c3, c2, c2_len, pri_key, plaintext, (int)mode))){
         goto  clean_up;
     }
     msg_buff = zend_string_alloc(c2_len, 0);
@@ -332,24 +339,28 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_sm2_sign, 0, 0, 3)
                 ZEND_ARG_INFO(1, signature)
                 ZEND_ARG_INFO(0, pri_key)
                 ZEND_ARG_INFO(0, iv)
+				ZEND_ARG_INFO(0, mode)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_sm2_sign_verify, 0, 0, 3)
                 ZEND_ARG_INFO(0, msg)
                 ZEND_ARG_INFO(0, signature)
                 ZEND_ARG_INFO(0, pub_key)
                 ZEND_ARG_INFO(0, iv)
+				ZEND_ARG_INFO(0, mode)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_sm2_encrypt, 0, 0, 3)
                 ZEND_ARG_INFO(0, msg)
                 ZEND_ARG_INFO(1, encrypt)
                 ZEND_ARG_INFO(0, pub_key)
+				ZEND_ARG_INFO(0, mode)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_sm2_decrypt, 0, 0, 3)
                 ZEND_ARG_INFO(0, encrypt)
                 ZEND_ARG_INFO(1, msg)
                 ZEND_ARG_INFO(0, pri_key)
+				ZEND_ARG_INFO(0, mode)
 ZEND_END_ARG_INFO()
 /* }}} */
 

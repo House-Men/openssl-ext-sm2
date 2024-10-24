@@ -39,7 +39,8 @@
 int sm3_digest_z(const unsigned char *id,
                  const int id_len,
 		 const unsigned char *pub_key,
-		 unsigned char *z_digest);
+		 unsigned char *z_digest,
+		 const int mode);
 
 /**************************************************
 * Name: sm3_digest_with_preprocess
@@ -67,7 +68,8 @@ int sm3_digest_with_preprocess(const unsigned char *message,
                                const unsigned char *id,
 			       const int id_len,
 			       const unsigned char *pub_key,
-                               unsigned char *digest);
+                    unsigned char *digest,
+					const int mode);
 
 #ifdef  __cplusplus
   }

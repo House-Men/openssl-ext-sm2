@@ -15,6 +15,7 @@
 
 #include "sm2_cipher_error_codes.h"
 #include "sm2_encrypt_and_decrypt.h"
+#include "sm2_java.h"
 
 /*********************************************************/
 int sm2_encrypt_data_test(const unsigned char *message,
@@ -236,7 +237,7 @@ int sm2_encrypt_data_test(const unsigned char *message,
 	
 	EVP_DigestInit_ex(md_ctx, md, NULL);
 	EVP_DigestUpdate(md_ctx, x2, sizeof(x2));
-        EVP_DigestUpdate(md_ctx, message, message_len);
+    EVP_DigestUpdate(md_ctx, message, message_len);
 	EVP_DigestUpdate(md_ctx, y2, sizeof(y2));
         EVP_DigestFinal_ex(md_ctx, c3, NULL);
 	
@@ -291,11 +292,12 @@ int php_sm2_encrypt(const unsigned char *message,
 		const unsigned char *pub_key,
 		unsigned char *c1,
 		unsigned char *c3,
-		unsigned char *c2)
+		unsigned char *c2,
+		const int mode)
 {
 	int error_code;
 	unsigned char pub_key_x[32], pub_key_y[32], c1_x[32], c1_y[32], x2[32], y2[32];
-	unsigned char c1_point[65], x2_y2[64];
+	unsigned char c1_point[65], x2_y2[65];
 	unsigned char *t = NULL;
 	BN_CTX *ctx = NULL;
 	BIGNUM *bn_k = NULL, *bn_c1_x = NULL, *bn_c1_y = NULL;
@@ -443,13 +445,19 @@ int php_sm2_encrypt(const unsigned char *message,
 		{
 			goto clean_up;
 		}
-		memcpy(x2_y2, x2, sizeof(x2));
-		memcpy((x2_y2 + sizeof(x2)), y2, sizeof(y2));
-		
+		if(mode == 2) {
+			x2_y2[0] = 0x04;
+			memcpy((x2_y2 + 1), x2, sizeof(x2));
+			memcpy((x2_y2 + 1 + sizeof(x2)), y2, sizeof(y2));
+		}else {
+			memcpy(x2_y2, x2, sizeof(x2));
+			memcpy((x2_y2 + sizeof(x2)), y2, sizeof(y2));
+		}
+
 		if ( !(ECDH_KDF_X9_62(t,
 		                      message_len,
 				      x2_y2,
-				      sizeof(x2_y2),
+				      mode == 2 ? 65 : 64,
 				      NULL,
 				      0,
 				      md)) )
@@ -498,10 +506,22 @@ int php_sm2_encrypt(const unsigned char *message,
 	memcpy(c1, c1_point, sizeof(c1_point));
 	
 	EVP_DigestInit_ex(md_ctx, md, NULL);
-	EVP_DigestUpdate(md_ctx, x2, sizeof(x2));
-        EVP_DigestUpdate(md_ctx, message, message_len);
-	EVP_DigestUpdate(md_ctx, y2, sizeof(y2));
-        EVP_DigestFinal_ex(md_ctx, c3, NULL);
+	unsigned char tmp[33];
+	if(mode == 2){
+		EVP_DigestUpdate(md_ctx, tmp, JavaBigIntToByteArray(tmp, x2, sizeof(x2)));
+	}else{
+		EVP_DigestUpdate(md_ctx, x2, sizeof(x2));
+	}
+	
+    EVP_DigestUpdate(md_ctx, message, message_len);
+
+	if(mode == 2){
+		EVP_DigestUpdate(md_ctx, tmp, JavaBigIntToByteArray(tmp, y2, sizeof(y2)));
+	}else{
+		EVP_DigestUpdate(md_ctx, y2, sizeof(y2));
+	}
+	
+    EVP_DigestFinal_ex(md_ctx, c3, NULL);
 	
 	for (i = 0; i < message_len; i++)
 	{
@@ -554,11 +574,12 @@ int php_sm2_decrypt(const unsigned char *c1,
 		const unsigned char *c2,
 		const int c2_len,
 		const unsigned char *pri_key,
-		unsigned char *plaintext)
+		unsigned char *plaintext,
+		const int mode)
 {
 	int error_code;
 	unsigned char c1_x[32], c1_y[32], x2[32], y2[32];
-	unsigned char x2_y2[64], digest[32];
+	unsigned char x2_y2[65], digest[32];
 	unsigned char *t = NULL, *M = NULL;
 	BN_CTX *ctx = NULL;
 	BIGNUM *bn_d = NULL, *bn_c1_x = NULL, *bn_c1_y = NULL;
@@ -678,8 +699,14 @@ int php_sm2_decrypt(const unsigned char *c1,
 	{
 		goto clean_up;
 	}
-	memcpy(x2_y2, x2, sizeof(x2));
-	memcpy((x2_y2 + sizeof(x2)), y2, sizeof(y2));
+	if(mode == 2) {
+		x2_y2[0] = 0x04;
+		memcpy((x2_y2 + 1), x2, sizeof(x2));
+		memcpy((x2_y2 + 1 + sizeof(x2)), y2, sizeof(y2));
+	}else {
+		memcpy(x2_y2, x2, sizeof(x2));
+		memcpy((x2_y2 + sizeof(x2)), y2, sizeof(y2));
+	}
 	md = EVP_sm3();
 	
 	if ( !(t = (unsigned char *)malloc(message_len)) )
@@ -689,7 +716,7 @@ int php_sm2_decrypt(const unsigned char *c1,
 	if ( !(ECDH_KDF_X9_62(t,
 	                      message_len,
 			      x2_y2,
-			      sizeof(x2_y2),
+			      mode == 2 ? 65 : 64,
 			      NULL,
 			      0,
 			      md)) )
@@ -725,10 +752,22 @@ int php_sm2_decrypt(const unsigned char *c1,
 	}
 
 	EVP_DigestInit_ex(md_ctx, md, NULL);
-	EVP_DigestUpdate(md_ctx, x2, sizeof(x2));
-        EVP_DigestUpdate(md_ctx, M, message_len);
-	EVP_DigestUpdate(md_ctx, y2, sizeof(y2));
-        EVP_DigestFinal_ex(md_ctx, digest, NULL);
+	unsigned char tmp[33];
+	if(mode == 2){
+		EVP_DigestUpdate(md_ctx, tmp, JavaBigIntToByteArray(tmp, x2, sizeof(x2)));
+	}else{
+		EVP_DigestUpdate(md_ctx, x2, sizeof(x2));
+	}
+	
+    EVP_DigestUpdate(md_ctx, M, message_len);
+	
+	if(mode == 2){
+		EVP_DigestUpdate(md_ctx, tmp, JavaBigIntToByteArray(tmp, y2, sizeof(y2)));
+	}else{
+		EVP_DigestUpdate(md_ctx, y2, sizeof(y2));
+	}
+	
+    EVP_DigestFinal_ex(md_ctx, digest, NULL);
 	
 	if ( memcmp(digest, c3, sizeof(digest)) )
 	{

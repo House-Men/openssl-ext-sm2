@@ -11,12 +11,14 @@
 #include <openssl/evp.h>
 #include "sm2_cipher_error_codes.h"
 #include "sm3_with_preprocess.h"
+#include "sm2_java.h"
 
 /*********************************************************/
 int sm3_digest_z(const unsigned char *id,
                  const int id_len,
 		 const unsigned char *pub_key,
-		 unsigned char *z_digest)
+		 unsigned char *z_digest,
+		 const int mode)
 {
 	int id_bit_len = id_len * 8;
 	unsigned char entl[2];
@@ -64,17 +66,31 @@ int sm3_digest_z(const unsigned char *id,
 #endif
 	   return COMPUTE_SM3_DIGEST_FAIL;
 	}
-        EVP_DigestInit_ex(md_ctx, md, NULL);
-        EVP_DigestUpdate(md_ctx, entl, sizeof(entl));
+	unsigned char tmp[33];
+	tmp[0] = 0x00;
+    EVP_DigestInit_ex(md_ctx, md, NULL);
+    EVP_DigestUpdate(md_ctx, entl, sizeof(entl));
 	EVP_DigestUpdate(md_ctx, id, id_len);
+	
+	if(mode == 2)EVP_DigestUpdate(md_ctx, tmp, 1);
 	EVP_DigestUpdate(md_ctx, sm2_param_a, sizeof(sm2_param_a));
+	
 	EVP_DigestUpdate(md_ctx, sm2_param_b, sizeof(sm2_param_b));
 	EVP_DigestUpdate(md_ctx, sm2_param_x_G, sizeof(sm2_param_x_G));
+	
+	if(mode == 2)EVP_DigestUpdate(md_ctx, tmp, 1);
 	EVP_DigestUpdate(md_ctx, sm2_param_y_G, sizeof(sm2_param_y_G));
-	EVP_DigestUpdate(md_ctx, x_coordinate, sizeof(x_coordinate));
-	EVP_DigestUpdate(md_ctx, y_coordinate, sizeof(y_coordinate));
-        EVP_DigestFinal_ex(md_ctx, z_digest, NULL);
-        EVP_MD_CTX_free(md_ctx);
+	
+	if(mode == 2){
+		EVP_DigestUpdate(md_ctx, tmp, JavaBigIntToByteArray(tmp, x_coordinate, sizeof(x_coordinate)));
+		EVP_DigestUpdate(md_ctx, tmp, JavaBigIntToByteArray(tmp, y_coordinate, sizeof(y_coordinate)));
+	}else{
+		EVP_DigestUpdate(md_ctx, x_coordinate, sizeof(x_coordinate));
+		EVP_DigestUpdate(md_ctx, y_coordinate, sizeof(y_coordinate));
+	}
+	
+    EVP_DigestFinal_ex(md_ctx, z_digest, NULL);
+    EVP_MD_CTX_free(md_ctx);
 	return 0;
 }
 
@@ -84,7 +100,8 @@ int sm3_digest_with_preprocess(const unsigned char *message,
                                const unsigned char *id,
 			       const int id_len,
 			       const unsigned char *pub_key,
-                               unsigned char *digest)
+                   unsigned char *digest,
+				   const int mode)
 {
 	int error_code;
 	unsigned char z_digest[32];
@@ -93,7 +110,8 @@ int sm3_digest_with_preprocess(const unsigned char *message,
     error_code = sm3_digest_z(id,
                               id_len,
                               pub_key,
-                              z_digest);
+                              z_digest,
+							  mode);
     if (error_code)
 	{
 #ifdef _DEBUG

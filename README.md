@@ -5,7 +5,7 @@
 
 特性：非对称加密
 
-git地址：https://gitee.com/state-secret-series/openssl-ext-sm2.git
+原作者git地址：https://gitee.com/state-secret-series/openssl-ext-sm2.git
 
 #### 软件架构
 zend 常规PHP扩展结构
@@ -15,6 +15,8 @@ zend 常规PHP扩展结构
 1，liunx :openssl/lib必须包含 libcrypto.so和libssl.so 动态库
 
 2，mac :openssl/lib必须包含 libcrypto.dylib和libssl.dylib 动态库
+
+3，windows :openssl/lib必须包含 libcrypto.lib和libssl.lib 动态库
 
 如出现：: undefined symbol: BN_CTX_secure_new 或其他类似的情况，就是没有动态库，openssl 不必升级以免影响正常的openssl扩展受影响，可在新目录安装openssl
 
@@ -26,119 +28,35 @@ zend 常规PHP扩展结构
 例：mac
 ![mac-openssl位置](doc/image/mac-openssl.png)
 
-#### 安装教程
+#### 编译安装教程
 
-解压进入openssl-ext-sm2目录
-
+Linux命令行环境编译示例
 ```asm
-cd openssl-ext-sm2-master
-```
-```asm
+cd openssl-ext-sm2
 phpize
-```
-检查依赖
-```asm
-./configure  --with-openssl=/usr/local/openssl@1.1
-```
-检查结果
-```asm
-[lilunx openssl-ext-sm2]$ ./configure --with-openssl=/usr/local/openssl@1.1
-checking for grep that handles long lines and -e... /usr/bin/grep
-checking for egrep... /usr/bin/grep -E
-checking for a sed that does not truncate output... /usr/bin/sed
-checking for cc... cc
-checking whether the C compiler works... yes
-checking for C compiler default output file name... a.out
-checking for suffix of executables...
-checking whether we are cross compiling... no
-checking for suffix of object files... o
-checking whether we are using the GNU C compiler... yes
-checking whether cc accepts -g... yes
-checking for cc option to accept ISO C89... none needed
-checking how to run the C preprocessor... cc -E
-checking for icc... no
-checking for suncc... no
-checking whether cc understands -c and -o together... yes
-checking for system library directory... lib
-checking if compiler supports -R... no
-checking if compiler supports -Wl,-rpath,... yes
-checking build system type... x86_64-pc-linux-gnu
-checking host system type... x86_64-pc-linux-gnu
-checking target system type... x86_64-pc-linux-gnu
-checking for PHP prefix... /usr/local/php
-checking for PHP includes... -I/usr/local/php/include/php -I/usr/local/php/include/php/main -I/usr/local/php/include/php/TSRM -I/usr/local/php/include/php/Zend -I/usr/local/php/include/php/ext -I/usr/local/php/include/php/ext/date/lib
-checking for PHP extension directory... /usr/local/php/lib/php/extensions/no-debug-non-zts-20180731
-checking for PHP installed headers prefix... /usr/local/php/include/php
-checking if debug is enabled... no
-checking if zts is enabled... no
-checking for re2c... no
-configure: WARNING: You will need re2c 0.13.4 or later if you want to regenerate PHP parsers.
-checking for gawk... gawk
-checking for OpenSSL support... yes, shared
-checking for Kerberos support... no
-checking whether to use system default cipher list instead of hardcoded value... no
-checking whether to enable sm2 support... yes, shared
-checking for RAND_egd... no
-checking for pkg-config... /usr/bin/pkg-config
-checking for OpenSSL version... >= 1.0.1
-checking for CRYPTO_free in -lcrypto... yes
-checking for SSL_CTX_set_ssl_version in -lssl... yes
-checking for ld used by cc... /usr/bin/ld
-checking if the linker (/usr/bin/ld) is GNU ld... yes
-checking for /usr/bin/ld option to reload object files... -r
-checking for BSD-compatible nm... /usr/bin/nm -B
-checking whether ln -s works... yes
-checking how to recognize dependent libraries... pass_all
-checking for ANSI C header files... yes
-checking for sys/types.h... yes
-checking for sys/stat.h... yes
-checking for stdlib.h... yes
-checking for string.h... yes
-checking for memory.h... yes
-checking for strings.h... yes
-checking for inttypes.h... yes
-checking for stdint.h... yes
-checking for unistd.h... yes
-checking dlfcn.h usability... yes
-checking dlfcn.h presence... yes
-checking for dlfcn.h... yes
-checking the maximum length of command line arguments... 1572864
-checking command to parse /usr/bin/nm -B output from cc object... ok
-checking for objdir... .libs
-checking for ar... ar
-checking for ranlib... ranlib
-checking for strip... strip
-checking if cc supports -fno-rtti -fno-exceptions... no
-checking for cc option to produce PIC... -fPIC
-checking if cc PIC flag -fPIC works... yes
-checking if cc static flag -static works... no
-checking if cc supports -c -o file.o... yes
-checking whether the cc linker (/usr/bin/ld -m elf_x86_64) supports shared libraries... yes
-checking whether -lc should be explicitly linked in... no
-checking dynamic linker characteristics... GNU/Linux ld.so
-checking how to hardcode library paths into programs... immediate
-checking whether stripping libraries is possible... yes
-checking if libtool supports shared libraries... yes
-checking whether to build shared libraries... yes
-checking whether to build static libraries... no
-
-creating libtool
-appending configuration tag "CXX" to libtool
-configure: creating ./config.status
-config.status: creating config.h
-config.status: config.h is unchanged
-```
-安装编译
-```asm
-make&&make install
-```
-修改php.ini
-```asm
-extension="sm2.so"
+./configure --with-openssl=/usr/local/openssl
+make
+make install
 ```
 
-重启php-fpm或者apache
-
+Windows命令行环境编译示例
+相关所需资源可在如下网址去下载
+https://github.com/php/php-sdk-binary-tools
+https://windows.php.net/downloads/releases/archives
+https://windows.php.net/downloads/php-sdk/deps
+```asm
+cd openssl-ext-sm2
+set PHPDIR=E:\OpenSource\php
+set PHPSDK=%PHPDIR%\php-sdk-binary-tools-php-sdk-2.3.0
+set PHPDEPS=%PHPSDK%\deps
+set PHPSRC=%PHPDIR%\php-7.2.18-devel-VC15-x64
+set PATH=%PHPSRC%;%PATH%
+call %PHPSDK%\phpsdk-vc15-x64
+phpize
+configure --with-extra-includes="%PHPDEPS%\openssl-1.1.1s-74-vc15-x64\include" --with-extra-libs="%PHPDEPS%\openssl-1.1.1s-74-vc15-x64\lib" --enable-sm2 --with-prefix=%PHPDIR%\install
+nmake
+nmake install
+```
 
 #### 使用说明
 
@@ -155,11 +73,12 @@ sm2_key_pair($pub_key, $pri_key);
 2.  签名
 ```
 $msg 信息
-$signature 输出签名结果
+$signature 输出签名结果 注意签名结果的左边32字节与右边32字节也被叫做签名R值与签名S值
 $pri_key 私钥 二进制
 $iv userid 没有设置默认为空的操作：如需为空请设置1234567812345678
+$mode 没有设置默认为0标准模式,可选 0=标准模式 2=某些银行Java变种模式
 
-sm2_sign($msg, $signature, $pri_key, $iv)
+sm2_sign($msg, $signature, $pri_key, $iv, $mode)
 
 
 返回值int 0 成功 其他状态失败
@@ -168,11 +87,12 @@ sm2_sign($msg, $signature, $pri_key, $iv)
 3.  验签
 ```
 $msg 信息
-$signature 输入签名结果
+$signature 输入签名结果 注意签名结果的左边32字节与右边32字节也被叫做签名R值与签名S值
 $pub_key 公钥 二进制
 $iv userid 没有设置默认为空的操作：如需为空请设置1234567812345678
+$mode 没有设置默认为0标准模式,可选 0=标准模式 2=某些银行Java变种模式
 
-sm2_sign_verify($msg, $signature, $pub_key, $iv)；
+sm2_sign_verify($msg, $signature, $pub_key, $iv, $mode)；
 
 返回值int 0 成功 其他状态失败
 ```
@@ -181,7 +101,9 @@ sm2_sign_verify($msg, $signature, $pub_key, $iv)；
 $msg 信息
 $encrypt 输出加密结果 二进制 
 $pub_key 公钥 二进制
-sm2_encrypt($msg, $encrypt, $pub_key)
+$mode 没有设置默认为0新标准模式,可选 0=新标准/C1C3C2模式 1=旧标准/C1C2C3模式 2=某些银行Java旧标准变种模式
+
+sm2_encrypt($msg, $encrypt, $pub_key, $mode)
 
 返回值int 0 成功 其他状态失败
 ```
@@ -190,7 +112,9 @@ sm2_encrypt($msg, $encrypt, $pub_key)
 $encrypt 加密信息 二进制
 $string 输出结果 明文
 $pri_key 私钥
-sm2_decrypt($encrypt, $string, $pri_key)
+$mode 没有设置默认为0新标准模式,可选 0=新标准/C1C3C2模式 1=旧标准/C1C2C3模式 2=某些银行Java旧标准变种模式
+
+sm2_decrypt($encrypt, $string, $pri_key, $mode)
 
 返回值int 0 成功 其他状态失败
 ```

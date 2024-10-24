@@ -46,7 +46,8 @@ int sm2_sign_data_test(const unsigned char *message,
                                             id,
                                             id_len,
                                             pub_key,
-                                            digest);
+                                            digest,
+											0);
 	if ( error_code )
 	{
 	   return error_code;
@@ -205,7 +206,8 @@ int sm2_sign_data(const unsigned char *message,
 		  const int id_len,
 		  const unsigned char *pub_key,
 		  const unsigned char *pri_key,
-		  SM2_SIGNATURE_STRUCT *sm2_sig)
+		  SM2_SIGNATURE_STRUCT *sm2_sig,
+		  const int mode)
 {
 	int error_code;
 	unsigned char digest[32];
@@ -222,12 +224,12 @@ int sm2_sign_data(const unsigned char *message,
                                             id,
                                             id_len,
                                             pub_key,
-                                            digest);
+                                            digest,
+											mode);
     if ( error_code)
 	{
 	   return error_code;
 	}
-
 	error_code = ALLOCATION_MEMORY_FAIL;
 	if ( !(ctx = BN_CTX_secure_new()) )
 	{
@@ -380,7 +382,8 @@ int sm2_verify_sig(const unsigned char *message,
 		   const unsigned char *id,
 		   const int id_len,
 		   const unsigned char *pub_key,
-		   SM2_SIGNATURE_STRUCT *sm2_sig)
+		   SM2_SIGNATURE_STRUCT *sm2_sig,
+		   const int mode)
 {
 	int error_code;
 	unsigned char digest[32];
@@ -398,7 +401,8 @@ int sm2_verify_sig(const unsigned char *message,
                                             id,
                                             id_len,
                                             pub_key,
-                                            digest);
+                                            digest,
+											mode);
     if (error_code )
 	{
 	   return error_code;

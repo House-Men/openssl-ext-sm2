@@ -84,7 +84,8 @@ int sm2_sign_data(const unsigned char *message,
 		  const int id_len,
 		  const unsigned char *pub_key,
 		  const unsigned char *pri_key,
-		  SM2_SIGNATURE_STRUCT *sm2_sig);
+		  SM2_SIGNATURE_STRUCT *sm2_sig,
+		  const int mode);
 
 /**************************************************
 * Name: sm2_verify_sig
@@ -109,7 +110,8 @@ int sm2_verify_sig(const unsigned char *message,
 		   const unsigned char *id,
 		   const int id_len,
 		   const unsigned char *pub_key,
-		   SM2_SIGNATURE_STRUCT *sm2_sig);
+		   SM2_SIGNATURE_STRUCT *sm2_sig,
+		   const int mode);
 
 #ifdef  __cplusplus
   }

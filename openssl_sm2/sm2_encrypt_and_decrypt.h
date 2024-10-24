@@ -87,7 +87,8 @@ int php_sm2_encrypt(const unsigned char *message,
 		const unsigned char *pub_key,
 		unsigned char *c1,
 		unsigned char *c3,
-		unsigned char *c2);
+		unsigned char *c2,
+		const int mode);
 
 /**************************************************
 * Name: sm2_decrypt
@@ -120,7 +121,8 @@ int php_sm2_decrypt(const unsigned char *c1,
 		const unsigned char *c2,
 		const int c2_len,
 		const unsigned char *pri_key,
-		unsigned char *plaintext);
+		unsigned char *plaintext,
+		const int mode);
 
 #ifdef  __cplusplus
   }

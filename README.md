@@ -31,7 +31,7 @@ zend 常规PHP扩展结构
 #### 编译安装教程
 
 Linux命令行环境编译示例
-```asm
+```bash
 cd openssl-ext-sm2
 phpize
 ./configure --with-openssl=/usr/local/openssl
@@ -41,10 +41,10 @@ make install
 
 Windows命令行环境编译示例
 相关所需资源可在如下网址去下载
-https://github.com/php/php-sdk-binary-tools
-https://windows.php.net/downloads/releases/archives
-https://windows.php.net/downloads/php-sdk/deps
-```asm
++ https://github.com/php/php-sdk-binary-tools
++ https://windows.php.net/downloads/releases/archives
++ https://windows.php.net/downloads/php-sdk/deps
+```bat
 cd openssl-ext-sm2
 set PHPDIR=E:\OpenSource\php
 set PHPSDK=%PHPDIR%\php-sdk-binary-tools-php-sdk-2.3.0
@@ -53,7 +53,7 @@ set PHPSRC=%PHPDIR%\php-7.2.18-devel-VC15-x64
 set PATH=%PHPSRC%;%PATH%
 call %PHPSDK%\phpsdk-vc15-x64
 phpize
-configure --with-extra-includes="%PHPDEPS%\openssl-1.1.1s-74-vc15-x64\include" --with-extra-libs="%PHPDEPS%\openssl-1.1.1s-74-vc15-x64\lib" --enable-sm2 --with-prefix=%PHPDIR%\install
+configure --enable-sm2 --with-extra-includes="%PHPDEPS%\openssl-1.1.1s-74-vc15-x64\include" --with-extra-libs="%PHPDEPS%\openssl-1.1.1s-74-vc15-x64\lib" --with-prefix="%PHPDIR%\install"
 nmake
 nmake install
 ```
@@ -61,7 +61,7 @@ nmake install
 #### 使用说明
 
 1.  创建公钥和私钥
-```
+```php
 $pub_key 取地址 结果为二进制
 $pri_key 取地址 结果为二进制
 
@@ -71,7 +71,7 @@ sm2_key_pair($pub_key, $pri_key);
 
 ```
 2.  签名
-```
+```php
 $msg 信息
 $signature 输出签名结果 注意签名结果的左边32字节与右边32字节也被叫做签名R值与签名S值
 $pri_key 私钥 二进制
@@ -85,7 +85,7 @@ sm2_sign($msg, $signature, $pri_key, $iv, $mode)
 
 ```
 3.  验签
-```
+```php
 $msg 信息
 $signature 输入签名结果 注意签名结果的左边32字节与右边32字节也被叫做签名R值与签名S值
 $pub_key 公钥 二进制
@@ -97,7 +97,7 @@ sm2_sign_verify($msg, $signature, $pub_key, $iv, $mode)；
 返回值int 0 成功 其他状态失败
 ```
 4. 公钥加密
-```
+```php
 $msg 信息
 $encrypt 输出加密结果 二进制 
 $pub_key 公钥 二进制
@@ -108,7 +108,7 @@ sm2_encrypt($msg, $encrypt, $pub_key, $mode)
 返回值int 0 成功 其他状态失败
 ```
 5. 私钥解密
-```
+```php
 $encrypt 加密信息 二进制
 $string 输出结果 明文
 $pri_key 私钥
@@ -119,8 +119,7 @@ sm2_decrypt($encrypt, $string, $pri_key, $mode)
 返回值int 0 成功 其他状态失败
 ```
 6. 演示
-```
-
+```php
  $msg = '这是测试';
  $iv = '1234567812345678'; //没有设置默认为空的操作：如需为空请设置1234567812345678
 

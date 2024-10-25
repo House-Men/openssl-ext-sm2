@@ -48,8 +48,8 @@ Windows命令行环境编译示例
 cd openssl-ext-sm2
 set PHPDIR=E:\OpenSource\php
 set PHPSDK=%PHPDIR%\php-sdk-binary-tools-php-sdk-2.3.0
-set PHPDEPS=%PHPSDK%\deps
 set PHPSRC=%PHPDIR%\php-7.2.18-devel-VC15-x64
+set PHPDEPS=%PHPSRC%\deps
 set PATH=%PHPSRC%;%PATH%
 call %PHPSDK%\phpsdk-vc15-x64
 phpize
